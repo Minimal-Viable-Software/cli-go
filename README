@@ -1,0 +1,6 @@
+Minimal Viable CLI
+
+Implement a parser for CLI's like this:
+
+  app cmd:subcmd flag=value option
+
