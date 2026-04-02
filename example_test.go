@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	cli "github.com/Minimal-Viable-Software/cli-go"
 )
@@ -12,33 +11,25 @@ import (
 func Example_rootFlagsAndArgs() {
 	root := cli.NewApplication()
 
-	var age int
-	root.IntFlag(&age, "age", "Your age.", -1)
+	age := -1
+	root.IntFlag(&age, "age", "Your age.")
 	var name string
-	root.StringArg(&name, 0, "name", "Your name")
-	var parents []string
-	root.StringArgs(&parents, 1, 2, "parents", "Your parents names")
-	var siblings []string
-	root.StringRest(&siblings, "siblings", "Your siblings names")
+	root.StringArg(&name, "name", "Your name")
 	var verbose bool
-	root.BoolFlag(&verbose, "verbose", "Be verbose about it", false)
+	root.BoolFlag(&verbose, "verbose", "Be verbose about it")
 
 	root.Run(func() error {
 		fmt.Println("verbose", verbose)
 		fmt.Println("name=" + name)
 		fmt.Println("age=" + fmt.Sprint(age))
-		fmt.Println("parents=" + fmt.Sprintf("[%s]", strings.Join(parents, " ")))
-		fmt.Println("siblings=" + fmt.Sprintf("[%s]", strings.Join(siblings, " ")))
 		return nil
 	})
 
-	root.Parse([]string{"verbose", "age=4", "Stewie", "Peter", "Louis", "Meg", "Chris"})
+	root.Parse([]string{"verbose", "age=4", "Stewie"})
 	// Output:
 	// verbose true
 	// name=Stewie
 	// age=4
-	// parents=[Peter Louis]
-	// siblings=[Meg Chris]
 }
 
 type sortstr string
@@ -58,7 +49,7 @@ func Example_commandDispatch() {
 	var sorting sortstr
 	cmd.EnumFlag(&sorting, "sort", "Sort by (default: price)", "price", "product")
 	var desc bool
-	cmd.BoolFlag(&desc, "descending", "Sort descending instead of ascending", false)
+	cmd.BoolFlag(&desc, "descending", "Sort descending instead of ascending")
 
 	cmd.Run(func() error {
 		fmt.Println("sort=" + sorting)
@@ -77,22 +68,18 @@ func Example_help() {
 	root.SetOutput(os.Stdout)
 	root.Help = "Tell me about your self!"
 
-	var age int
-	root.IntFlag(&age, "age", "Your age.", -1)
+	age := -1
+	root.IntFlag(&age, "age", "Your age.")
 	var name string
-	root.StringArg(&name, 0, "name", "Your name")
-	var parents []string
-	root.StringArgs(&parents, 1, 2, "parents", "Your parents names")
-	var siblings []string
-	root.StringRest(&siblings, "siblings", "Your siblings names")
+	root.StringArg(&name, "name", "Your name")
 	var verbose bool
-	root.BoolFlag(&verbose, "verbose", "Be verbose about it", false)
+	root.BoolFlag(&verbose, "verbose", "Be verbose about it")
 
 	cmd := root.SubCommand("prices", "List prices")
 	var sorting sortstr
 	cmd.EnumFlag(&sorting, "sort", "Sort by (default: price)", "price", "product")
 	var descending bool
-	cmd.BoolFlag(&descending, "descending", "Sort descending instead of ascending", false)
+	cmd.BoolFlag(&descending, "descending", "Sort descending instead of ascending")
 
 	err := root.Parse([]string{"help"})
 	if errors.Is(err, cli.ErrHelp) {
@@ -102,11 +89,9 @@ func Example_help() {
 	// Tell me about your self!
 	//
 	// Options:
-	//   age=<int>             Your age.
-	//   verbose               Be verbose about it
-	//   <string:name>         Your name
-	//   <string:parents{2}>   Your parents names
-	//   <string:siblings...>  Your siblings names
+	//   age=<int>      Your age.
+	//   verbose        Be verbose about it
+	//   <string:name>  Your name
 	//
 	// Commands:
 	//   prices                List prices
@@ -123,7 +108,7 @@ func Example_helpCommand() {
 	var sorting sortstr
 	cmd.EnumFlag(&sorting, "sort", "Sort by (default: price)", "price", "product")
 	var descending bool
-	cmd.BoolFlag(&descending, "descending", "Sort descending instead of ascending", false)
+	cmd.BoolFlag(&descending, "descending", "Sort descending instead of ascending")
 
 	err := root.Parse([]string{"help", "prices"})
 	if errors.Is(err, cli.ErrHelp) {
@@ -139,9 +124,9 @@ func Example_helpCommand() {
 func Example_doubleHyphenTerminator() {
 	root := cli.NewApplication()
 	var verbose bool
-	root.BoolFlag(&verbose, "verbose", "Be verbose about it", false)
+	root.BoolFlag(&verbose, "verbose", "Be verbose about it")
 	var name string
-	root.StringArg(&name, 0, "name", "Your name")
+	root.StringArg(&name, "name", "Your name")
 
 	root.Run(func() error {
 		fmt.Println("name=" + name)
@@ -168,7 +153,7 @@ func Example_enumValidation() {
 func Example_unknownFlag() {
 	root := cli.NewApplication()
 	var name string
-	root.StringArg(&name, 0, "name", "Your name")
+	root.StringArg(&name, "name", "Your name")
 
 	err := root.Parse([]string{"unknown=value"})
 	fmt.Println(err)
@@ -179,7 +164,7 @@ func Example_unknownFlag() {
 func Example_missingRequiredArg() {
 	root := cli.NewApplication()
 	var name string
-	root.StringArg(&name, 0, "name", "Your name")
+	root.StringArg(&name, "name", "Your name")
 
 	err := root.Parse([]string{})
 	fmt.Println(err)
@@ -187,33 +172,25 @@ func Example_missingRequiredArg() {
 	// missing required argument: name
 }
 
-func Example_restArgsEmpty() {
+func Example_extraArgs() {
 	root := cli.NewApplication()
 	var name string
-	root.StringArg(&name, 0, "name", "Your name")
-	var rest []string
-	root.StringRest(&rest, "rest", "The rest")
+	root.StringArg(&name, "name", "Your name")
 
-	root.Run(func() error {
-		fmt.Println("name=" + name)
-		fmt.Println("rest=" + fmt.Sprintf("%v", rest))
-		return nil
-	})
-
-	root.Parse([]string{"hello"})
+	err := root.Parse([]string{"Alice", "extra"})
+	fmt.Println(err)
 	// Output:
-	// name=hello
-	// rest=[]
+	// too many arguments: expected 1, got 2
 }
 
 func Example_flagsAnywhere() {
 	root := cli.NewApplication()
 	var greeting string
-	root.StringFlag(&greeting, "greeting", "A greeting", "")
+	root.StringFlag(&greeting, "greeting", "A greeting")
 	var a string
-	root.StringArg(&a, 0, "a", "First arg")
+	root.StringArg(&a, "a", "First arg")
 	var b string
-	root.StringArg(&b, 1, "b", "Second arg")
+	root.StringArg(&b, "b", "Second arg")
 
 	root.Run(func() error {
 		fmt.Println("a=" + a)
@@ -232,7 +209,7 @@ func Example_flagsAnywhere() {
 func Example_runFuncError() {
 	root := cli.NewApplication()
 	var name string
-	root.StringArg(&name, 0, "name", "Your name")
+	root.StringArg(&name, "name", "Your name")
 
 	root.Run(func() error {
 		return errors.New("app error")
@@ -247,7 +224,7 @@ func Example_runFuncError() {
 func Example_boolFlagExplicit() {
 	root := cli.NewApplication()
 	var verbose bool
-	root.BoolFlag(&verbose, "verbose", "Be verbose about it", false)
+	root.BoolFlag(&verbose, "verbose", "Be verbose about it")
 
 	root.Run(func() error {
 		fmt.Println("verbose", verbose)
@@ -257,4 +234,27 @@ func Example_boolFlagExplicit() {
 	root.Parse([]string{"verbose=false"})
 	// Output:
 	// verbose false
+}
+
+func Example_enumArg() {
+	root := cli.NewApplication()
+	root.SetOutput(os.Stdout)
+
+	cmd := root.SubCommand("query", "Run a query")
+	var sort sortstr
+	cmd.EnumArg(&sort, "sort", "Sort field", "price", "name")
+
+	cmd.Run(func() error {
+		fmt.Println("sort=" + sort)
+		return nil
+	})
+
+	root.Parse([]string{"query", "price"})
+
+	// Show help too
+	root.Parse([]string{"help", "query"})
+	// Output:
+	// sort=price
+	// query                Run a query
+	//   <price|name:sort>  Sort field
 }

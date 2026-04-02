@@ -36,7 +36,7 @@ type Argument struct {
 	Name     string     // name as it appears on command line
 	Usage    string     // help message
 	Value    flag.Value // value as set
-	Position []int      // one integer is abs position, two integers is a range, empty is rest
+	Position int        // position index, assigned by declaration order
 }
 
 // RunFunc is the functions used to run commands.
@@ -211,62 +211,19 @@ func (a *Application) writeAppHelp(buf *strings.Builder) {
 // Helpers
 
 func assignPositionals(cmd *Command, positionals []string) error {
-	// Compute maxFixedPos from all arguments with explicit positions
-	maxFixedPos := -1
-	for _, arg := range cmd.arguments {
-		switch len(arg.Position) {
-		case 1: // single
-			if arg.Position[0] > maxFixedPos {
-				maxFixedPos = arg.Position[0]
-			}
-		case 2: // range [start, end] inclusive
-			if arg.Position[1] > maxFixedPos {
-				maxFixedPos = arg.Position[1]
-			}
+	args := sortedArgs(cmd)
+	for _, arg := range args {
+		idx := arg.Position
+		if idx >= len(positionals) {
+			return fmt.Errorf("missing required argument: %s", arg.Name)
+		}
+		if err := arg.Value.Set(positionals[idx]); err != nil {
+			return fmt.Errorf("invalid value %q for argument %s: %v", positionals[idx], arg.Name, err)
 		}
 	}
-
-	// Assign single-position args
-	for _, arg := range cmd.arguments {
-		if len(arg.Position) == 1 {
-			idx := arg.Position[0]
-			if idx >= len(positionals) {
-				return fmt.Errorf("missing required argument: %s", arg.Name)
-			}
-			if err := arg.Value.Set(positionals[idx]); err != nil {
-				return fmt.Errorf("invalid value %q for argument %s: %v", positionals[idx], arg.Name, err)
-			}
-		}
+	if len(positionals) > len(args) {
+		return fmt.Errorf("too many arguments: expected %d, got %d", len(args), len(positionals))
 	}
-
-	// Assign range args
-	for _, arg := range cmd.arguments {
-		if len(arg.Position) == 2 {
-			start, end := arg.Position[0], arg.Position[1]
-			for i := start; i <= end; i++ {
-				if i >= len(positionals) {
-					return fmt.Errorf("missing required argument: %s", arg.Name)
-				}
-				if err := arg.Value.Set(positionals[i]); err != nil {
-					return fmt.Errorf("invalid value %q for argument %s: %v", positionals[i], arg.Name, err)
-				}
-			}
-		}
-	}
-
-	// Assign rest args (Position is empty slice)
-	for _, arg := range cmd.arguments {
-		if len(arg.Position) == 0 {
-			restStart := maxFixedPos + 1
-			for i := restStart; i < len(positionals); i++ {
-				if err := arg.Value.Set(positionals[i]); err != nil {
-					return fmt.Errorf("invalid value %q for argument %s: %v", positionals[i], arg.Name, err)
-				}
-			}
-			// Rest with zero values is OK — no error
-		}
-	}
-
 	return nil
 }
 
@@ -311,30 +268,14 @@ func flagDisplayName(f *Flag) string {
 }
 
 func argDisplayName(a *Argument) string {
+	if ev, ok := a.Value.(*enumValue); ok {
+		return "<" + strings.Join(ev.allowed, "|") + ":" + a.Name + ">"
+	}
 	tn := typeName(a.Value)
 	if tn == "" {
 		tn = "value"
 	}
-	switch a.Value.(type) {
-	case *stringSliceValue:
-		tn = "string"
-	case *intSliceValue:
-		tn = "int"
-	case *float64SliceValue:
-		tn = "float64"
-	case *boolSliceValue:
-		tn = "bool"
-	}
-
-	switch len(a.Position) {
-	case 1:
-		return "<" + tn + ":" + a.Name + ">"
-	case 2:
-		count := a.Position[1] - a.Position[0] + 1
-		return fmt.Sprintf("<%s:%s{%d}>", tn, a.Name, count)
-	default:
-		return "<" + tn + ":" + a.Name + "...>"
-	}
+	return "<" + tn + ":" + a.Name + ">"
 }
 
 func writeCommandHelp(buf *strings.Builder, name string, cmd *Command, indent string) {
@@ -412,14 +353,7 @@ func sortedArgs(cmd *Command) []*Argument {
 		args = append(args, a)
 	}
 	sort.Slice(args, func(i, j int) bool {
-		pi, pj := args[i].Position, args[j].Position
-		if len(pi) == 0 {
-			return false
-		}
-		if len(pj) == 0 {
-			return true
-		}
-		return pi[0] < pj[0]
+		return args[i].Position < args[j].Position
 	})
 	return args
 }
