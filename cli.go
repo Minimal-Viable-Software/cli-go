@@ -20,8 +20,6 @@ import (
 
 // Sentinel errors.
 var ErrHelp = errors.New("cli: help requested")
-var errParse = errors.New("parse error")
-var errRange = errors.New("value out of range")
 
 // Flag defines an optional flag.
 type Flag struct {
