@@ -254,7 +254,7 @@ func (e *enumValue) Set(s string) error {
 		*e.p = s
 		return nil
 	}
-	return fmt.Errorf("invalid value %q, must be one of: %s", s, strings.Join(e.allowed, ", "))
+	return fmt.Errorf("enum must be one of: %s", strings.Join(e.allowed, ", "))
 }
 
 func (e *enumValue) Get() any { return *e.p }
