@@ -21,8 +21,8 @@ func (c *Command) Run(fn RunFunc) {
 	c.run = fn
 }
 
-// varFlag registers a flag.Value under the given name.
-func (c *Command) varFlag(value flag.Value, name string, usage string) {
+// flag registers a flag.Value under the given name.
+func (c *Command) flag(value flag.Value, name string, usage string) {
 	if strings.Contains(name, "=") {
 		panic(fmt.Sprintf("flag name %q contains '='", name))
 	}
@@ -38,55 +38,55 @@ func (c *Command) varFlag(value flag.Value, name string, usage string) {
 }
 
 func (c *Command) BoolFlag(p *bool, name string, usage string, value bool) {
-	c.varFlag(newBoolValue(value, p), name, usage)
+	c.flag(newBoolValue(value, p), name, usage)
 }
 
 func (c *Command) BoolFuncFlag(name, usage string, fn func(string) error) {
-	c.varFlag(boolFuncValue(fn), name, usage)
+	c.flag(boolFuncValue(fn), name, usage)
 }
 
 func (c *Command) IntFlag(p *int, name string, usage string, value int) {
-	c.varFlag(newIntValue(value, p), name, usage)
+	c.flag(newIntValue(value, p), name, usage)
 }
 
 func (c *Command) Int64Flag(p *int64, name string, usage string, value int64) {
-	c.varFlag(newInt64Value(value, p), name, usage)
+	c.flag(newInt64Value(value, p), name, usage)
 }
 
 func (c *Command) UintFlag(p *uint, name string, usage string, value uint) {
-	c.varFlag(newUintValue(value, p), name, usage)
+	c.flag(newUintValue(value, p), name, usage)
 }
 
 func (c *Command) Uint64Flag(p *uint64, name string, usage string, value uint64) {
-	c.varFlag(newUint64Value(value, p), name, usage)
+	c.flag(newUint64Value(value, p), name, usage)
 }
 
 func (c *Command) Float64Flag(p *float64, name string, usage string, value float64) {
-	c.varFlag(newFloat64Value(value, p), name, usage)
+	c.flag(newFloat64Value(value, p), name, usage)
 }
 
 func (c *Command) StringFlag(p *string, name string, usage string, value string) {
-	c.varFlag(newStringValue(value, p), name, usage)
+	c.flag(newStringValue(value, p), name, usage)
 }
 
 func (c *Command) DurationFlag(p *time.Duration, name string, usage string, value time.Duration) {
-	c.varFlag(newDurationValue(value, p), name, usage)
+	c.flag(newDurationValue(value, p), name, usage)
 }
 
 func (c *Command) TextFlag(p encoding.TextUnmarshaler, name string, usage string, value encoding.TextMarshaler) {
-	c.varFlag(newTextValue(value, p), name, usage)
+	c.flag(newTextValue(value, p), name, usage)
 }
 
-func (c *Command) VarFlag(value flag.Value, name string, usage string) {
-	c.varFlag(value, name, usage)
+func (c *Command) Flag(value flag.Value, name string, usage string) {
+	c.flag(value, name, usage)
 }
 
 func (c *Command) FuncFlag(name, usage string, fn func(string) error) {
-	c.varFlag(funcValue(fn), name, usage)
+	c.flag(funcValue(fn), name, usage)
 }
 
-func (c *Command) EnumFlag(p *string, name string, usage string, values ...string) {
-	c.varFlag(newEnumValue(p, values), name, usage)
+func (c *Command) EnumFlag(value flag.Value, name string, usage string, values ...string) {
+	c.flag(newEnumValue(value, values), name, usage)
 }
 
 // varArg registers a flag.Value as a positional argument.

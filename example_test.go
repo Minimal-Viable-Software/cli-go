@@ -41,10 +41,21 @@ func Example_rootFlagsAndArgs() {
 	// siblings=[Meg Chris]
 }
 
+type sortstr string
+
+func (s *sortstr) Set(str string) error {
+	*s = sortstr(str)
+	return nil
+}
+
+func (s *sortstr) String() string {
+	return string(*s)
+}
+
 func Example_commandDispatch() {
 	root := cli.NewApplication()
 	cmd := root.SubCommand("prices", "List prices")
-	var sorting string
+	var sorting sortstr
 	cmd.EnumFlag(&sorting, "sort", "Sort by (default: price)", "price", "product")
 	var desc bool
 	cmd.BoolFlag(&desc, "descending", "Sort descending instead of ascending", false)
@@ -78,7 +89,7 @@ func Example_help() {
 	root.BoolFlag(&verbose, "verbose", "Be verbose about it", false)
 
 	cmd := root.SubCommand("prices", "List prices")
-	var sorting string
+	var sorting sortstr
 	cmd.EnumFlag(&sorting, "sort", "Sort by (default: price)", "price", "product")
 	var descending bool
 	cmd.BoolFlag(&descending, "descending", "Sort descending instead of ascending", false)
@@ -109,7 +120,7 @@ func Example_helpCommand() {
 	root.SetOutput(os.Stdout)
 
 	cmd := root.SubCommand("prices", "List prices")
-	var sorting string
+	var sorting sortstr
 	cmd.EnumFlag(&sorting, "sort", "Sort by (default: price)", "price", "product")
 	var descending bool
 	cmd.BoolFlag(&descending, "descending", "Sort descending instead of ascending", false)
@@ -145,7 +156,7 @@ func Example_doubleHyphenTerminator() {
 func Example_enumValidation() {
 	root := cli.NewApplication()
 	cmd := root.SubCommand("prices", "List prices")
-	var sorting string
+	var sorting sortstr
 	cmd.EnumFlag(&sorting, "sort", "Sort by (default: price)", "price", "product")
 
 	err := root.Parse([]string{"prices", "sort=invalid"})

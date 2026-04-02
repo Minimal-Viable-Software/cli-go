@@ -238,32 +238,27 @@ func (f boolFuncValue) IsBoolFlag() bool { return true }
 
 // -- enum Value
 type enumValue struct {
-	p       *string
+	val     flag.Value
 	allowed []string
 }
 
-func newEnumValue(p *string, allowed []string) *enumValue {
-	if len(allowed) > 0 {
-		*p = allowed[0]
-	}
-	return &enumValue{p: p, allowed: allowed}
+func newEnumValue(val flag.Value, allowed []string) *enumValue {
+	return &enumValue{val: val, allowed: allowed}
 }
 
 func (e *enumValue) Set(s string) error {
 	if slices.Contains(e.allowed, s) {
-		*e.p = s
+		e.val.Set(s)
 		return nil
 	}
 	return fmt.Errorf("enum must be one of: %s", strings.Join(e.allowed, ", "))
 }
 
-func (e *enumValue) Get() any { return *e.p }
-
 func (e *enumValue) String() string {
-	if e.p == nil {
+	if e.val == nil {
 		return ""
 	}
-	return *e.p
+	return e.val.String()
 }
 
 // -- string slice Value (for multi-value args)
