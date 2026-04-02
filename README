@@ -2,5 +2,7 @@ Minimal Viable CLI
 
 Implement a parser for CLI's like this:
 
-  app cmd:subcmd flag=value option
+  $ myapp prices sort=product
+  $ myapp prices:add 3.14 "Best Product"
 
+All flags are optional. All arguments are required.
