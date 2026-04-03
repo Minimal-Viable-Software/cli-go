@@ -1,0 +1,24 @@
+#!/usr/bin/env nu
+
+use std/log
+
+# Create a new release of this go package.
+export def main [tag] {
+    let pkg = open go.mod
+    | parse 'module {pkg}'
+    | get pkg.0
+    log info $"Creating release ($tag) of ($pkg)"
+    sleep 2sec
+
+    log debug $"git tag ($tag)"
+    git tag $tag
+
+    log debug $"git push origin ($tag)"
+    git push origin $tag
+
+    log debug $"gh release create ($tag)"
+    gh release create $tag
+
+    log debug $"GOPROXY=proxy.golang.org go list -m ($pkg)@($tag)"
+    GOPROXY=proxy.golang.org go list -m $"($pkg)@($tag)"
+}
