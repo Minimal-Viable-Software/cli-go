@@ -249,6 +249,8 @@ func typeName(v flag.Value) string {
 		return ""
 	case funcValue:
 		return "string"
+	case *Path:
+		return "path"
 	default:
 		return "value"
 	}

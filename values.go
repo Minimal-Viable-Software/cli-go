@@ -5,6 +5,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
+	"path"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -13,6 +16,9 @@ import (
 
 var errParse = errors.New("parse error")
 var errRange = errors.New("value out of range")
+
+// -----------------------------------------------------------------------------
+// Primitive Values
 
 // optional interface to indicate boolean flags that can be
 // supplied without "=value" text
@@ -138,6 +144,9 @@ func (f *float64Value) Get() any { return float64(*f) }
 
 func (f *float64Value) String() string { return strconv.FormatFloat(float64(*f), 'g', -1, 64) }
 
+// -----------------------------------------------------------------------------
+// Standard library values
+
 // time.Duration
 
 type durationValue time.Duration
@@ -194,7 +203,8 @@ func (f boolFuncValue) String() string { return "" }
 
 func (f boolFuncValue) IsBoolFlag() bool { return true }
 
-// enum
+// -----------------------------------------------------------------------------
+// Enum value
 
 type enumValue struct {
 	val     flag.Value
@@ -219,6 +229,90 @@ func (e *enumValue) String() string {
 	}
 	return e.val.String()
 }
+
+// -----------------------------------------------------------------------------
+// Path value
+
+// Path is a CLI helper value for working with files and directories.
+type Path string
+
+// Set implements the [flag.Value] interface.
+func (p *Path) Set(s string) error {
+	*p = Path(s)
+	return nil
+}
+
+// String implements the [flag.Value] interface.
+func (p *Path) String() string {
+	return string(*p)
+}
+
+// Get returns the raw path string.
+func (p *Path) Get() any {
+	return string(*p)
+}
+
+// Name returns the base name of the path.
+func (p *Path) Name() string {
+	return path.Base(string(*p))
+}
+
+// Abs returns the absolute path, or panic on any error.
+func (p *Path) Abs() string {
+	abs, err := filepath.Abs(string(*p))
+	if err != nil {
+		panic(err)
+	}
+	return abs
+}
+
+// Rel returns the path relative to current work directory,
+// or panic on any error.
+func (p *Path) Rel(basePath string) string {
+	abs, err := filepath.Abs(string(*p))
+	if err != nil {
+		panic(err)
+	}
+	rel, err := filepath.Rel(basePath, abs)
+	if err != nil {
+		panic(err)
+	}
+	return rel
+}
+
+// Exists returns `true` if the path exists.
+//
+// This always returns `false` if [os.Stat] fails, for any reason.
+func (p *Path) Exists() bool {
+	_, err := os.Stat(string(*p))
+	return err == nil
+}
+
+// IsDir returns `true` if the path exists and is a directory.
+//
+// This always returns `false` if [os.Stat] fails, for any reason.
+func (p *Path) IsDir() bool {
+	stat, err := os.Stat(string(*p))
+	if err != nil {
+		return false
+	}
+	return stat.IsDir()
+}
+
+// IsRegularFile returns `true` if the path exists and is a regular file.
+// That is, it tests that no mode type bits are set.
+//
+// This always returns `false` if [os.Stat] fails, for any reason.
+func (p *Path) IsRegularFile() bool {
+	stat, err := os.Stat(string(*p))
+	if err != nil {
+		return false
+	}
+	return stat.Mode().IsRegular()
+}
+
+// -----------------------------------------------------------------------------
+// Helper
 
 // Convert a [strconv.NumError] to a `cli` error.
 func numError(err error) error {
